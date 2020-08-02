@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+<link href="/css/reset.css" th:href="@{/css/reset.css}" rel="stylesheet" />
+<link href="/css/style.css" th:href="@{/css/style.css}" rel="stylesheet" />
+<script src="http://code.jquery.com/jquery-3.4.1.min.js"></script>
+<title>Ocean.com</title>
+<script>
+    $( () => {
+        
+        $('#complete').on('click', () => {
+			let checked = $('.radio:checked');
+		    let destinationId = $(checked).val();
+		    complete(destinationId);
+		});        
+        
+        $('#new').on('click', (event) =>{     //新規宛先が押された時の動作
+            window.location.href =  "/ocean/destination/"; //宛先登録に遷移
+        }); //新規宛先の処理終了
+        
+        $('#delete').on('click', () => {
+    		let checked = $('.radio:checked');
+    		let destinationId = $(checked).val();
+    		deleteDestination(destinationId,checked);
+    	});
+        
+        function complete(destinationId) {
+        	$.ajax({
+        		type: 'POST',
+        		url: '/ocean/settlement/complete',
+        		data: JSON.stringify({'destinationId': destinationId}),
+        		datatype: 'json',
+        		contentType: 'application/json',
+        	})
+        	.then((result) => {
+        		location.replace('/ocean/history/');
+        	}, () => {
+        		alert('Error: ajax connection failed.');
+        	});
+        	}
+        function deleteDestination(destinationId,checked) {
+        	$.ajax({
+        		type: 'POST',
+        		url: '/ocean/destination/delete',
+        		data: JSON.stringify({'destinationId': destinationId}),
+        		datatype: 'json',
+        		contentType: 'application/json',
+        	})
+        	.then((result) => {
+        		$(checked).parent().parent().remove();
+        		let radioList = $('.radio');
+        		if (radioList.length == 0) {
+        			location.replace('/ocean/settlement/');
+        		}
+        		
+        	}, () => {
+        		alert('Error: ajax connection failed.');
+        	});
+        }
+        });
+    </script>
+</head>
+<body>
+<header th:insert="fragments/page_header::pageHeader"></header>
+<main>
+	<div class="container cart">
+		<div>
+			<h2 th:if="${destination != null && destination.size() > 0}">宛先を選択し、決済を完了します。</h2>
+			<p class="info" th:if="${destination != null && destination.size() > 0}">宛先の新規登録、削除も可能です。</p>
+			<p class="info"	th:if="${destination == null || destination.size() == 0}">宛先情報がありません。新規登録してください。</p>
+		</div>
+		
+		<table class="destination" th:if="${destination.size() > 0 && destination != null}">
+			<tr>
+				<th>選択</th><th>宛先氏名</th><th>住所</th><th>電話番号</th>
+			</tr>
+			<tr th:each="dest, aa: ${destination}" >
+			       <td>
+			       <input type="radio"  name="id" th:value="${dest.id}" class="radio" th:checked="${aa.index==0}"/>
+			       </td>
+			       <td th:text="${dest.familyName} +' '+ ${dest.firstName}"  />
+			       <td th:text="${dest.address}"  />
+			       <td th:text="${dest.telNumber}"  />
+			</tr>
+		</table>
+		<div class="buttonArea">
+			<button id="delete" th:if="${destination != null && destination.size() > 0}" >削除</button>
+			<button id="new">新規宛先</button>
+			<button id="complete" th:if="${destination != null && destination.size() > 0}" >決済</button>
+		</div>
+	</div>
+</main>
+</body>
+</html>
